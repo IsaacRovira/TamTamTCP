@@ -19,53 +19,55 @@ public class TamTamTCP {
     public static void main(String[] args) {
         
         int port;
-        String direccionIP;
-        Socket cliente;
-        ServerSocket Servicio;        
-        TcpClientConn conn = new TcpClientConn();
+        String IP;
         
         if(args.length < -1){
             System.out.println("Mostrar ayuda.");
             System.exit(0);
         }
         
-        conn.direccionIP = "10.10.1.102";
-        conn.port = 5050;
+        IP = "127.0.0.1";
+        port = 5050;
         
-        conn.Connectar();
+        Astm conn1 = new Astm(IP, port);
         
-        if(conn.status){
-            System.out.println("Conectado");
-            conn.Enviar_D();
-            conn.Enviar_P();
-            conn.Recibir();
-        }
-        
-        try{
-            conn.ops.print((char)0x104);
-        }catch(Exception e){
-            System.err.print(e.getClass().getName() + " 2 " + e.getMessage());
-        }
-        
-        
-        int resp = 0;
-        String response="";
-        do{
+        do{           
+            switch(conn1.Check_ENQ()){
+               case -3:
+                   //System.out.print("Nada en el Stream");
+                   break;
+               case -1:
+                   System.out.println("Error");
+                   break;
+               case 1:
+                   boolean on = true;
+                   do{
+                       switch(conn1.RecibirResultado()){
+                           case 0:
+                               System.out.println("TimeOut");
+                               break;
+                           case -1:
+                               on = false;
+                               System.out.println("ERROR");
+                               break;
+                           case 1:                               
+                               System.out.println("Recibido!");
+                               on = false;                               
+                       }
+                   }while(false);                   
+                   break;
+               case 0:
+                   System.out.println("No ENQ");
+                   break;
+               default:
+                   System.out.println("Unknown");
+           }            
             try{
-                resp = conn.is.read();
-                if(resp > 0){
-                    response = String.valueOf(resp);
-                    if(response != null){
-                        System.out.print(response+" ");
-                    }
-                }
+                Thread.sleep(100);
             }catch(Exception e){
-                System.err.print(e.getClass().getName() + " " + e.getMessage());
+                System.out.println(e.getClass() + " " + e.getMessage());
             }            
-        }while(resp != -1);
-        
-        conn.Close();        
-    }
+        }while(true);
 }
 
 class TcpClientConn{
