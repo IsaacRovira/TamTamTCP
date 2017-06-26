@@ -44,7 +44,7 @@ public class Astm{
     
     private int Find_Pos_Value(frame data, int value){
         for(int n = 0; n < data.framedata.length; n++){
-            if(n == value) return n;
+            if(data.framedata[n]==value) return n;
         }
         return -1;
     }
@@ -61,9 +61,12 @@ public class Astm{
         trama.add(cadena);
     }
     
-    public int Check_ENQ(){        
+    public int Check_ENQ(){
         try{
-            if(conn.inStream.available()==0)return -3;
+            if(conn.inStream.available()==0){
+                Thread.sleep(250);
+                return -3;
+            }
             int dato = conn.inStream.read();
             System.out.println(dato + " Leido durante ENQ check");
             if(dato == ascii.ENQ) return 1;
@@ -189,9 +192,12 @@ public class Astm{
     private int LeerStream(int timeout){
         int d;
         try{
-            while((d = conn.inStream.read()) == -1){
+            Thread.sleep(10);
+            while(conn.inStream.available() == 0){
+                Thread.sleep(10);
                 //if(timeout == timeout) return -2;
-            }            
+            }
+            d = conn.inStream.read();
         }catch(Exception e){
             System.out.println(e.getClass() + " " + e.getMessage());
             return -1;
@@ -199,8 +205,11 @@ public class Astm{
         return d;
     }
     
+    
     private void Enviar_dato(int dato, int veces, int modo){
+        
         try{
+            Thread.sleep(100);
             switch (modo){
             case 0:
                 for(int n = 0; n < veces; n++){
@@ -238,30 +247,51 @@ public class Astm{
         According to ASTM E-1381 frame cheksum (<STX>1...Data...<CR><ETX>xx<CR><LF>) is
         defined as modulo 256 of ASCII values sum between <STX> not included and <ETX>
         included characters: 1...Data...<CR><ETX>
-        */
-        return true;
-        int suma, res, chs;
-        suma = ascii.ETX;
-        chs = datos.checksum[0]/16 + datos.checksum[1];
-        for(int n = 0; n < Find_Pos_Value(datos, ascii.ETX); n++){
-            suma+=datos.framedata[n];
+        */        
+        int suma, res;
+        String a, b;
+        a=b="";
+        suma = datos.frameNum;        
+        a += ((char)datos.checksum[0])+ "" + ((char)datos.checksum[1]);        
+        
+        for(int n = 0; n <= Find_Pos_Value(datos, ascii.ETX); n++){
+            suma += datos.framedata[n];
         }
-        res = suma%256;
-        System.out.println("Checksum: " + res + " " + chs);
-        return (res-chs) == 0;        
+        
+        res = suma % 256;
+        b = String.format("%02X", res);
+        
+        System.out.println("Checksum: " + b +" Modulo: " +  res + " Suma: " + suma + " Posicion: "+ Find_Pos_Value(datos, ascii.ETX) + " " + a);
+        
+        return b.equals(a);
     }
     
-    private byte[] Calcular_Checksum(frame datos){return byte[] n;}
+    private int[] Calcular_Checksum(frame datos){
+        int suma, res;
+        int[] num = new int[2];
+        String a = null;
+        suma = ascii.ETX + datos.frameNum;
+        for(int n =0; n < Find_Pos_Value(datos, ascii.ETX); n++){
+            suma += datos.framedata[n];
+        }
+        
+        a = Integer.toHexString(suma);
+        
+        for(int n = 0; n < num.length; n++){
+            num[n] = (int)a.charAt(n);
+        }
+        return num;
+    }
     
     private frame Generate_frame(String cadena, int framenum){
         frame datos = new frame();
         for(int n=0; n < cadena.length(); n++){
             datos.framedata[n] = (int)cadena.charAt(n);
         }
-        datos.checksum = Calular_Checksum(datos);
+        datos.checksum = Calcular_Checksum(datos);
         
         return datos;
-    }
+    }   
     
     public int EnviarResultado(int timeout){
         switch(LeerStream(timeout)){

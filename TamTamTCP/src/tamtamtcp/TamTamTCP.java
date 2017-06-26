@@ -16,7 +16,7 @@ public class TamTamTCP {
     /**
      * @param args the command line arguments
      */
-    public static void main(String[] args) {
+    public static void main(String[] args) throws IOException {
         
         int port;
         String IP;
@@ -28,7 +28,7 @@ public class TamTamTCP {
         
         IP = "127.0.0.1";
         port = 5050;
-        
+
         Astm conn1 = new Astm(IP, port);
         
         do{           
@@ -82,6 +82,16 @@ class TcpClientConn{
         public TcpClientConn(){
             this.direccionIP = null;
             this.port = 0;
+            this.cliente = null;
+            this.is = null;
+            this.os = null;            
+            this.ops = null;
+            this.status = false;
+        }
+        
+        public TcpClientConn(String ip, int port){
+            this.direccionIP = ip;
+            this.port = port;
             this.cliente = null;
             this.is = null;
             this.os = null;            
