@@ -15,19 +15,19 @@ public class Astm{
     
     ArrayList trama = new ArrayList();
     Asciichars ascii;
-    conexion conn;
+    conexion conn;    
     
     Astm(){
         trama = null;
         ascii = new Asciichars();
-        this.conn = null;
+        this.conn = null;        
     }
     
     Astm(String direccion, int puerto){
         trama = null;
         ascii = new Asciichars();
         this.conn = new conexion(direccion, puerto);
-        this.conn.Connectar();
+        this.conn.Connectar();        
     }
     
     public void Nueva_trama(){
@@ -40,21 +40,6 @@ public class Astm{
     
     public void Add_trama(Object O){
         trama.add(O);
-    }
-    
-    private int Find_Pos_Value(frame data, int value){
-        for(int n = 0; n < data.framedata.length; n++){
-            if(data.framedata[n]==value) return n;
-        }
-        return -1;
-    }
-    
-    private String FrameToString(frame datos){
-        String cadena = "";
-        for(int n = 1; n < Find_Pos_Value(datos, ascii.ETX); n++){
-            cadena += (char)datos.framedata[n];
-        }
-        return(cadena);
     }
     
     public void Guardar_frame(String cadena){
@@ -103,63 +88,24 @@ public class Astm{
                     case -2:
                         System.out.println("Recibir case -2");
                         return 0;
-                    case 2: //<STX> the start text
+                    case 2:
+                        //<STX> the start text
                         System.out.println("Recibir datos case 2 (stx)");
+                        
                         //Frame number.
-                        dato = LeerStream(30);                        
-                        if(dato < 48 || dato > 55){
-                            System.out.println("Error Frame number " + (char)dato);
-                            Enviar_dato(ascii.NACK,3,1);
-                            return 0;
-                        }else{
-                            System.out.println((char)dato + " Frame number");
-                            data.frameNum = dato;
-                        }
+                        FrameNum_IN(data);
                         
                         //Data frame
-                        System.out.println("DataFrame");
-                        do{                        
-                            dato = LeerStream(30);
-                            System.out.print(dato + " ");
-                            //if(dato == ascii.ETX) break;                            
-                            if(!(dato > 31 || dato < 127) && (dato != ascii.CR || dato != ascii.LF || dato != ascii.ETX)){
-                                System.out.println((char)dato + " Data frame data incorrect");
-                                Enviar_dato(ascii.NACK,3,1);
-                                return 0;
-                            }
-                            data.framedata[i] = dato;
-                            i++;
-                            if(i > data.framedata.length){
-                                Enviar_dato(ascii.NACK,3,1);
-                                return 0;
-                            }
-                        }while(dato != ascii.ETX);                        
+                        DataFrame_IN(data);                        
 
                         //Checksum
-                        System.out.println("\nCheckSum");
-                        for(int n = 0; n < data.checksum.length; n++){
-                            dato = LeerStream(30);
-                            System.out.println((char)dato + " Checksum");
-                            if(!((dato > 47 && dato < 58)||(dato > 64 && dato < 71))){
-                                System.out.println("Error CheckSum " + (char)dato);
-                                Enviar_dato(ascii.NACK,3,1);
-                                return 0;
-                            }
-                            data.checksum[n] = dato;
-                        }
+                        CheckSum_IN(data);
                         
                         //End of the frame
-                        System.out.println("End of the frame");
-                        for(int n = 0; n < data.crlf.length; n++){
-                            if((dato=LeerStream(30)) != data.crlf[n]){
-                                System.out.println(n + " Error End of the frame " + dato);
-                                Enviar_dato(ascii.NACK,3,1);
-                                return 0;
-                            }
-                        }
-                        System.out.println(data.crlf[0]+ " " + data.crlf[1]);
+                        EndOfFrame_IN(data);
                         
-                        System.out.println("Verificar");                        
+                        
+                        System.out.println("Verificar");               
                         if(Verificar_Datos(data, nacks, lineNum)){               //Verificamos que la trama recibida cumple los requisitos ASTM
                             Enviar_dato(ascii.ACK,1,1);
                             //trama.add(FrameToString(data));
@@ -189,12 +135,137 @@ public class Astm{
         }
     }
     
+    public int EnviarResultado(int timeout){
+        switch(LeerStream(timeout)){
+            case 0: //Time out. Means nothing. Good one. We can send.
+                Enviar_dato(ascii.ENQ,1,0);
+                switch(LeerStream(30)){
+                    case 0: //Time out. No answer. ¡mmmH! Wait 18 sec and try again.
+                        return EnviarResultado(18);
+                    case 5: //ENQ conflict. Wait 5 sec for ACK.
+                        return EnviarResultado(5);                        
+                    case -1: //Error reading. Abort.
+                        return -1;
+                    case 6: //ACK. Goooood! Let's go....
+                        return Enviar_frame();
+                    default: //What's that?. Send nak nak nak. Wait 30 sec. And try again.
+                        Enviar_dato(ascii.NACK,3,0);
+                        return EnviarResultado(30);                       
+                }
+            case -1: //Error reading. We abort.
+                return -1;
+            case 5: //ENQ. We abort.
+                return 0;
+            default: //Shit something is not working. Send nak nak nak. Wait 30 sec. And try again.
+                Enviar_dato(ascii.NACK,3,0);
+                return EnviarResultado(30);
+        }
+    }
+
+    private int EndOfFrame_IN(frame data){
+        int dato;
+        System.out.println("End of the frame");
+        for(int n = 0; n < data.crlf.length; n++){
+            switch(dato=LeerStream(30)){
+                case -1: //Error leyendo....
+                    return -1;
+                case 0: //Time out... cerrar comunicación.
+                    return 0;
+                case 4: //EOT.... comunicación cerrada.
+                    return 4;
+                default:
+                    if(dato != data.crlf[n]){
+                        System.out.println(n + " Error End of the frame " + dato);
+                        Enviar_dato(ascii.NACK,3,1);
+                        return 0;
+                    }                    
+            }
+        }
+        return 1;
+    }
+    private int CheckSum_IN(frame data){
+        System.out.print("\nCheckSum: ");
+        int dato;
+        for(int n = 0; n < data.checksum.length; n++){
+            switch(dato = LeerStream(30)){
+                case -1: //Error al leer los datos....
+                    return -1;
+                case 0: //Timeout.... cerrar comunicación.
+                    return 0;
+                case 4: //EOT.... comunicación cortada.
+                    return 4;
+                default:
+                    if(!((dato > 47 && dato < 58)||(dato > 64 && dato < 71))){
+                        System.out.print("Error " + (char)dato+"\n");
+                        Enviar_dato(ascii.NACK,3,1);
+                        return 0;
+                    }
+                    System.out.print((char)dato);
+                    data.checksum[n] = dato;
+            }
+        }
+        System.out.println("");
+        return 1;
+    }
+    private int DataFrame_IN(frame data){
+        System.out.println("DataFrame");
+        int dato, i;
+        i=0;
+        do{
+            switch(dato = LeerStream(30)){
+                case -1: //Error_lectura-
+                    return -1;
+                case 0: //Timeout... cerrar conexión.
+                    return 0;
+                case 4: //EOT.... cerrar conexión.
+                    return 4;
+                default:
+                    System.out.print(dato + " ");                    
+                    if(!(dato > 31 || dato < 127) && (dato != ascii.CR || dato != ascii.LF || dato != ascii.ETX)){
+                        System.out.println((char)dato + " Data frame data incorrect");
+                        Enviar_dato(ascii.NACK,3,1);
+                        return 0;
+                    }
+                    data.framedata[i] = dato;
+                    i++;
+                    if(i > data.framedata.length){
+                        Enviar_dato(ascii.NACK,3,1);
+                        return 0;
+                    }
+            }
+        }while(dato != ascii.ETX);
+        return 1;
+    }
+    private int FrameNum_IN(frame data){
+        System.out.print("Frame number: ");
+        int dato;
+        switch(dato = LeerStream(30)){
+            case -1: //Error de lectura
+                return -1;
+            case 0: //Timeout.... cerrar conexión.
+                return 0;
+            case 4: //EOT----- cerrar conexión.
+                return 4;
+            default:
+                if(dato < 48 || dato > 55){
+                    System.out.print(" Error, dato = " + (char)dato + "\n");
+                    Enviar_dato(ascii.NACK,3,1);
+                    return 0;
+                }else{
+                    System.out.println((char)dato);
+                    data.frameNum = dato;
+                }
+        }
+        System.out.println("");
+        return 1;
+    }
+    
     private int LeerStream(int timeout){
         int d;
         try{
-            Thread.sleep(10);
+            Thread.sleep(1);
             while(conn.inStream.available() == 0){
-                Thread.sleep(10);
+                Thread.sleep(1);
                 //if(timeout == timeout) return -2;
             }
             d = conn.inStream.read();
@@ -203,13 +274,12 @@ public class Astm{
             return -1;
         }
         return d;
-    }
-    
+    }    
     
     private void Enviar_dato(int dato, int veces, int modo){
         
         try{
-            Thread.sleep(100);
+            Thread.sleep(10);
             switch (modo){
             case 0:
                 for(int n = 0; n < veces; n++){
@@ -261,7 +331,7 @@ public class Astm{
         res = suma % 256;
         b = String.format("%02X", res);
         
-        System.out.println("Checksum: " + b +" Modulo: " +  res + " Suma: " + suma + " Posicion: "+ Find_Pos_Value(datos, ascii.ETX) + " " + a);
+        System.out.println("Checksum: " + a + " / " + b);
         
         return b.equals(a);
     }
@@ -291,33 +361,6 @@ public class Astm{
         datos.checksum = Calcular_Checksum(datos);
         
         return datos;
-    }   
-    
-    public int EnviarResultado(int timeout){
-        switch(LeerStream(timeout)){
-            case 0: //Time out. Means nothing. Good one. We can send.
-                Enviar_dato(ascii.ENQ,1,0);
-                switch(LeerStream(30)){
-                    case 0: //Time out. No answer. ¡mmmH! Wait 18 sec and try again.
-                        return EnviarResultado(18);
-                    case 5: //ENQ conflict. Wait 5 sec for ACK.
-                        return EnviarResultado(5);                        
-                    case -1: //Error reading. Abort.
-                        return -1;
-                    case 6: //ACK. Goooood! Let's go....
-                        return Enviar_frame();
-                    default: //What's that?. Send nak nak nak. Wait 30 sec. And try again.
-                        Enviar_dato(ascii.NACK,3,0);
-                        return EnviarResultado(30);                       
-                }
-            case -1: //Error reading. We abort.
-                return -1;
-            case 5: //ENQ. We abort.
-                return 0;
-            default: //Shit something is not working. Send nak nak nak. Wait 30 sec. And try again.
-                Enviar_dato(ascii.NACK,3,0);
-                return EnviarResultado(30);
-        }
     }
     
     private int Enviar_frame(){
@@ -364,8 +407,20 @@ public class Astm{
             Enviar_dato(dato.crlf[1],1,0);
     }
     
+    private int Find_Pos_Value(frame data, int value){
+        for(int n = 0; n < data.framedata.length; n++){
+            if(data.framedata[n]==value) return n;
+        }
+        return -1;
+    }
     
-    
+    private String FrameToString(frame datos){
+        String cadena = "";
+        for(int n = 1; n < Find_Pos_Value(datos, ascii.ETX); n++){
+            cadena += (char)datos.framedata[n];
+        }
+        return(cadena);
+    }
 }
 
 
