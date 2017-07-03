@@ -20,6 +20,7 @@ public class TamTamTCP {
         
         int port;
         String IP;
+        Config config = new Config();
         
         if(args.length < -1){
             System.out.println("Mostrar ayuda.");

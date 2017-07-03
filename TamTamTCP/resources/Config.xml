@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+To change this license header, choose License Headers in Project Properties.
+To change this template file, choose Tools | Templates
+and open the template in the editor.
+-->
+<configuracion>
+    <AppSetting>
+        <DateTime>2017-12-22 12-01</DateTime>
+        <Release>1.0.0.0.0</Release>        
+    </AppSetting>
+    <laboratorio id="codigocliente">
+        <name>labA</name>
+        <alias>aliasA</alias>
+        <analizadores>
+            <analizador id="SerialNum">
+                    <tipo>bio/hema</tipo>
+                    <name>nombreA</name>
+                    <alias>aliasA</alias>
+                    <settings>
+                            <connection>
+                                    <ip>127.0.0.1</ip>
+                                    <port>5050</port>
+                            </connection>
+                            <directorios>
+                                    <dirPeticiones>c:\temp\pet</dirPeticiones>
+                                    <dirResultados>c:\temp\res</dirResultados>
+                                    <dirQueries>c:\temp\queries</dirQueries>
+                            </directorios>
+                            <modo>
+                                    <demo>no</demo>
+                                    <query>no</query>
+                            </modo>
+                            <astm>
+                                    <timeout>30</timeout>
+                                    <maxnak>6</maxnak>
+                            </astm>
+                            <thread>
+                                    <mainpaue>1</mainpaue>
+                                    <looppause>1</looppause>
+                            </thread>
+                    </settings>                    
+            </analizador>
+        </analizadores>
+    </laboratorio>    
+</configuracion>
