@@ -35,18 +35,15 @@ public class archivos {
     Path directorio, oldDirectorio;
     ArrayList<String> datos;
     String extension;
-    File file; 
-    File[] fileList;
     
     archivos(){
         this.directorio = null;
         this.oldDirectorio = null;
         this.datos = null;
         this.extension = null;
-        this.file = null;
     }
     
-    archivos(Path direcotrio, Path oldDirectorio, String extension){
+    archivos(Path directorio, Path oldDirectorio, String extension){
         this.directorio = directorio;
         this.oldDirectorio = oldDirectorio;
         this.extension = extension;
@@ -84,12 +81,6 @@ public class archivos {
     }
     public void setExtension(String extension){
         this.extension = extension;
-    }
-    public File getFile(){
-        return this.file;
-    }
-    public void setFile(File file){
-        this.file = file;
     }
     
     /**

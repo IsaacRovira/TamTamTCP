@@ -13,13 +13,31 @@ import java.util.*;
  * @author Isaac
  */
 public class filesRes extends archivos{
+    File fileOrg, fileDest;
     
     filesRes(){
         super();
+        this.fileOrg = null;
+        this.fileDest = null;
     }
     
     filesRes(Path directorio, Path oldDirectorio, String extension){
         super();
+        this.fileOrg = null;
+        this.fileDest = null;
+    }
+    
+    public File getFileOrg(){
+        return this.fileOrg;
+    }
+    public void setFileOrg(File fileOrg){
+        this.fileOrg = fileOrg;
+    }
+    public File getFileDest(){
+        return this.fileDest;        
+    }
+    public void setFileDest(File fileDest){
+        this.fileDest = fileDest;
     }
     
     public int EnviarFicheroRes(){        
