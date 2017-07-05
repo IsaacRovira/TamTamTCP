@@ -22,11 +22,13 @@ and open the template in the editor.
                                     <ip>127.0.0.1</ip>
                                     <port>5050</port>
                             </connection>
-                            <directorios>
+                            <archivos>
                                     <dirPeticiones>c:\temp\pet</dirPeticiones>
                                     <dirResultados>c:\temp\res</dirResultados>
                                     <dirQueries>c:\temp\queries</dirQueries>
-                            </directorios>
+                                    <extension_Peticiones>pet</extension_Peticiones>
+                                    <extension_Resultados>res</extension_Resultados>
+                            </archivos>
                             <modo>
                                     <demo>no</demo>
                                     <query>no</query>

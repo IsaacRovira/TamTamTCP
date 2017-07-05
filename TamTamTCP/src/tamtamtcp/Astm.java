@@ -5,7 +5,7 @@
  */
 package tamtamtcp;
 
-import java.util.ArrayList;
+import java.util.*;
 
 /**
  *
@@ -23,11 +23,17 @@ public class Astm{
         this.conn = null;        
     }
     
-    Astm(String direccion, int puerto){
+    Astm(String direccion, int puerto, conexion conn){
         trama = null;
         ascii = new Asciichars();
-        this.conn = new conexion(direccion, puerto);
-        this.conn.Connectar();        
+        this.conn = conn;                
+    }
+    
+    public boolean Connectar(){
+        if(!this.conn.status){
+            this.conn.Connectar();
+        }
+        return this.conn.status;
     }
     
     public void Nueva_trama(){
@@ -134,7 +140,13 @@ public class Astm{
             return -1;
         }
     }
-    
+    /**
+     * 
+     * @param timeout tiempo máx de espera respuesta.
+     * @return Devuelve 0 si se ha superado el tiempo de espera
+     *                  -1 si ha habido algún error de lectura.
+     *                  
+     */
     public int EnviarResultado(int timeout){
         switch(LeerStream(timeout)){
             case 0: //Time out. Means nothing. Good one. We can send.
@@ -260,13 +272,21 @@ public class Astm{
         return 1;
     }
     
+    /**
+     * 
+     * @param timeout tiempo máx de espera de respuesta.
+     * @return Devuelve -2 si se ha superado el tiempo máx de espera
+     *                  -1 se ha ocurrido algún error de conexión.
+     *                  el valor entero ascii del parámetro leido.
+     */
     private int LeerStream(int timeout){
-        int d;
+        int d;        
+        long mark = new Date().getTime() + (long)(timeout);
         try{
             Thread.sleep(1);
-            while(conn.inStream.available() == 0){
+            while(conn.inStream.available() == 0){                
+                if(new Date().getTime() > mark) return -2;
                 Thread.sleep(1);
-                //if(timeout == timeout) return -2;
             }
             d = conn.inStream.read();
         }catch(Exception e){
@@ -276,6 +296,14 @@ public class Astm{
         return d;
     }    
     
+    /**
+     * 
+     * @param dato Valor a enviar.
+     * @param veces Número de veces que se quiere enviar.
+     * @param modo Modo de escirtura del stram:
+     *              0: OutStram.write()
+     *              1: PrintStram.write()
+     */
     private void Enviar_dato(int dato, int veces, int modo){
         
         try{
@@ -420,7 +448,8 @@ public class Astm{
             cadena += (char)datos.framedata[n];
         }
         return(cadena);
-    }
+    }    
+ 
 }
 
 

@@ -31,7 +31,7 @@ public class conexion {
         this.inStream = null;
         this.outStream = null;
         this.outPrintStream = null;
-        status = false;
+        setStatus();
     }
     //Constructot modo cliente
     conexion(String direccion, int puerto){
@@ -42,7 +42,7 @@ public class conexion {
         this.inStream = null;
         this.outStream = null;
         this.outPrintStream = null;
-        status = false;
+        setStatus();
     }
     //Constructor modo servidor
     conexion (int puerto){
@@ -56,17 +56,27 @@ public class conexion {
         status = false;
     }
     
+    private void setStatus(){
+        this.status = this.cliente.isClosed();
+    }
+    public boolean getStatus(){
+        return this.status;
+    }
+    
     public int Connectar(){
         try{
             cliente = new Socket (this.direccion, this.puerto);
             this.inStream = new DataInputStream(cliente.getInputStream());
             this.outStream = new DataOutputStream(cliente.getOutputStream());
             this.outPrintStream = new PrintStream(cliente.getOutputStream());
-            status = true;
+            setStatus();
             return 1;
         }catch(Exception e){
             System.out.println(e.getClass().toString() + " " + e.getMessage());
-            status = false;
+            setStatus();
+            if(this.status){
+                this.cliente.close();
+            }
             return 0;
         }finally{            
         }

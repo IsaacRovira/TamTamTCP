@@ -6,7 +6,7 @@
 package tamtamtcp;
 import java.io.*;
 import java.net.*;
-
+import java.util.*;
 /**
  *
  * @author Isaac
@@ -18,9 +18,15 @@ public class TamTamTCP {
      */
     public static void main(String[] args) throws IOException {
         
+        
+        ArrayList<Astm> astmList;
+        ArrayList<conexion> connList;
+        ArrayList<archivos> fileList;
+        
         int port;
         String IP;
         Config config = new Config();
+        
         
         if(args.length < -1){
             System.out.println("Mostrar ayuda.");

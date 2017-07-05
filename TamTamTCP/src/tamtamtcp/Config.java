@@ -16,14 +16,19 @@ import org.w3c.dom.*;
 /**
  *
  * @author Isaac
+ * Obtendrá las configuraciones de un fichero config.xml
+ * Establecerá un array con la configuración de cada uno de los analizadores
+ * definidos en el archivo config.xml.
  */
+import java.util.*;
 public class Config {
-    
+       
     Document Doc;
     File file;
     DocumentBuilderFactory factory;
     DocumentBuilder builder;
     Document doc;
+    ArrayList <anaConfig> config;
     
     Config(){        
         try{
@@ -56,7 +61,7 @@ public class Config {
 }
 
 class anaConfig{
-    String serialNum, ip, labname, labalias, tipo, ananame, anaalias;
+    String serialNum, ip, labname, labalias, tipo, ananame, anaalias, petExt, resExt;
     int port, demo, query,timeout,maxnak,threadmainpause,threadlooppause;
     Path dirPet, dirRes, dirQuery;
     
@@ -66,7 +71,10 @@ class anaConfig{
         NodeList nL = Config.getElementsByTagName("analizador").item(pos).getChildNodes();        
         getNodeValues(nL);        
     }    
-    
+    /**
+     * Recorrera todos los nodos de una lista de nodos pasando cada nodo a la función setValue(nodo);
+     * @param nL Lista de  nodos de un fichero XML.
+     */
     private void getNodeValues(NodeList nL){
         for(int i = 0; i < nL.getLength();i++){
             if(nL.item(i).hasChildNodes()){
@@ -76,7 +84,10 @@ class anaConfig{
             }
         }
     }
-    
+    /**
+     * Asignara el valor establecido en el fichero XML a una variable según el nombre del nodo.
+     * @param node nodo XML que contiene un valor.
+     */
     private void setValue(Node node){
         String value = node.getNodeValue();
         switch(node.getNodeName()){
@@ -121,6 +132,12 @@ class anaConfig{
                     break;
                 case "looppause":
                     this.threadlooppause = onOff(value);
+                    break;
+                case "extension_Peticiones":
+                    this.petExt = value;
+                    break;
+                case "extension_Resultados":
+                    this.resExt = value;
                     break;
             default:break;
         }
